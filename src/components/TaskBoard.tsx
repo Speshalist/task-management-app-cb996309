@@ -5,6 +5,7 @@ import { TaskColumn } from './TaskColumn';
 import { AddTaskDialog } from './AddTaskDialog';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useMidnightReset } from '@/hooks/useMidnightReset';
 
 const initialTasks: Task[] = [
   {
@@ -207,6 +208,25 @@ export function TaskBoard() {
     );
   };
 
+  const handleTimeUpdate = useCallback((taskId: string, seconds: number) => {
+    setTasks((prev) =>
+      prev.map((task) =>
+        task.id === taskId ? { ...task, timeSpentSeconds: seconds } : task
+      )
+    );
+  }, []);
+
+  const handleResetTasks = useCallback((taskIds: string[], targetColumn: ColumnId) => {
+    setTasks((prev) =>
+      prev.map((task) =>
+        taskIds.includes(task.id) ? { ...task, columnId: targetColumn } : task
+      )
+    );
+  }, []);
+
+  // Auto-reset incomplete "today" tasks to queue at midnight
+  useMidnightReset({ tasks, onResetTasks: handleResetTasks });
+
   const handleOpenAddDialog = (columnId: ColumnId) => {
     setSelectedColumn(columnId);
     setEditingTask(null);
@@ -244,6 +264,7 @@ export function TaskBoard() {
                 onAddTask={handleOpenAddDialog}
                 onToggleComplete={handleToggleComplete}
                 onEditTask={handleEditTask}
+                onTimeUpdate={handleTimeUpdate}
               />
             ))}
           </div>

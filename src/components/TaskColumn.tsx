@@ -11,6 +11,7 @@ interface TaskColumnProps {
   onAddTask: (columnId: ColumnId) => void;
   onToggleComplete: (taskId: string) => void;
   onEditTask: (task: Task) => void;
+  onTimeUpdate: (taskId: string, seconds: number) => void;
 }
 
 const columnBgClasses: Record<ColumnId, string> = {
@@ -29,7 +30,7 @@ function formatTotalTime(tasks: Task[]): string {
   return `${minutes}m`;
 }
 
-export function TaskColumn({ id, title, tasks, onAddTask, onToggleComplete, onEditTask }: TaskColumnProps) {
+export function TaskColumn({ id, title, tasks, onAddTask, onToggleComplete, onEditTask, onTimeUpdate }: TaskColumnProps) {
   return (
     <div className={cn(
       'flex flex-col rounded-xl p-4 min-w-[320px] max-w-[360px]',
@@ -72,6 +73,7 @@ export function TaskColumn({ id, title, tasks, onAddTask, onToggleComplete, onEd
                 index={index}
                 onToggleComplete={onToggleComplete}
                 onEdit={onEditTask}
+                onTimeUpdate={onTimeUpdate}
               />
             ))}
             {provided.placeholder}

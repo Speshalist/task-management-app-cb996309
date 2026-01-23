@@ -1,14 +1,17 @@
 import { Task, PRIORITY_LABELS } from '@/types/task';
 import { Draggable } from '@hello-pangea/dnd';
-import { Calendar, Clock, Check, Pencil } from 'lucide-react';
+import { Calendar, Clock, Check, Pencil, Play, Pause, RotateCcw } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { useTaskTimer } from '@/hooks/useTaskTimer';
+import { useCallback } from 'react';
 
 interface TaskCardProps {
   task: Task;
   index: number;
   onToggleComplete: (taskId: string) => void;
   onEdit: (task: Task) => void;
+  onTimeUpdate: (taskId: string, seconds: number) => void;
 }
 
 const priorityClasses: Record<string, string> = {
@@ -33,7 +36,15 @@ function formatTime(seconds: number): string {
   return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 }
 
-export function TaskCard({ task, index, onToggleComplete, onEdit }: TaskCardProps) {
+export function TaskCard({ task, index, onToggleComplete, onEdit, onTimeUpdate }: TaskCardProps) {
+  const stableOnTimeUpdate = useCallback(onTimeUpdate, []);
+  
+  const { seconds, isRunning, toggle, reset } = useTaskTimer({
+    taskId: task.id,
+    initialSeconds: task.timeSpentSeconds,
+    onTimeUpdate: stableOnTimeUpdate,
+  });
+
   return (
     <Draggable draggableId={task.id} index={index}>
       {(provided, snapshot) => (
@@ -44,7 +55,8 @@ export function TaskCard({ task, index, onToggleComplete, onEdit }: TaskCardProp
           className={cn(
             'task-card group',
             snapshot.isDragging && 'task-card-dragging',
-            task.completed && 'opacity-60'
+            task.completed && 'opacity-60',
+            isRunning && 'ring-2 ring-primary/50'
           )}
         >
           <div className="flex items-start justify-between gap-2 mb-3">
@@ -91,9 +103,43 @@ export function TaskCard({ task, index, onToggleComplete, onEdit }: TaskCardProp
               </span>
             </div>
             
-            <div className="flex items-center gap-2">
-              <span className="time-display text-xs">
-                {formatTime(task.timeSpentSeconds)}
+            <div className="flex items-center gap-1.5">
+              {/* Timer Controls */}
+              <div className="flex items-center gap-1 mr-1">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggle();
+                  }}
+                  disabled={task.completed}
+                  className={cn(
+                    'w-6 h-6 rounded-full flex items-center justify-center transition-all',
+                    isRunning 
+                      ? 'bg-primary text-primary-foreground hover:bg-primary/90' 
+                      : 'bg-muted hover:bg-muted/80 text-muted-foreground',
+                    task.completed && 'opacity-50 cursor-not-allowed'
+                  )}
+                  title={isRunning ? 'Pause timer' : 'Start timer'}
+                >
+                  {isRunning ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3 ml-0.5" />}
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    reset();
+                  }}
+                  className="w-5 h-5 rounded flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-muted text-muted-foreground"
+                  title="Reset timer"
+                >
+                  <RotateCcw className="w-3 h-3" />
+                </button>
+              </div>
+              
+              <span className={cn(
+                'time-display text-xs font-mono min-w-[60px] text-right',
+                isRunning && 'text-primary font-semibold'
+              )}>
+                {formatTime(seconds)}
               </span>
               <button
                 onClick={() => onToggleComplete(task.id)}
