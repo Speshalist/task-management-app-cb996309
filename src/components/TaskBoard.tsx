@@ -7,128 +7,16 @@ import { Project } from './ProjectEditor';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useMidnightReset } from '@/hooks/useMidnightReset';
+import { useLocalStorage } from '@/hooks/useLocalStorage';
 
-const initialProjects: Project[] = [
+const defaultProjects: Project[] = [
   { id: '1', name: 'Personal', color: 'purple' },
   { id: '2', name: 'Work', color: 'blue' },
   { id: '3', name: 'Side Project', color: 'green' },
   { id: '4', name: 'Learning', color: 'orange' },
   { id: '5', name: 'Health', color: 'pink' },
 ];
-const initialTasks: Task[] = [
-  {
-    id: '1',
-    title: 'Finish White Label Funnel',
-    description: 'Complete the perspective funnel setup',
-    project: 'Work',
-    projectColor: 'blue',
-    priority: 'none',
-    estimatedMinutes: 60,
-    timeSpentSeconds: 0,
-    dueDate: new Date(2025, 3, 25),
-    completed: false,
-    columnId: 'queue',
-    createdAt: new Date(),
-  },
-  {
-    id: '2',
-    title: 'Build Airtable Integration',
-    description: 'Shopify + recording automation',
-    project: 'Side Project',
-    projectColor: 'green',
-    priority: 'medium',
-    estimatedMinutes: 90,
-    timeSpentSeconds: 0,
-    dueDate: new Date(2025, 3, 25),
-    completed: false,
-    columnId: 'queue',
-    createdAt: new Date(),
-  },
-  {
-    id: '3',
-    title: 'Shoot Website Workshop',
-    description: 'Structure, copy, live build for Prompt Genie',
-    project: 'Side Project',
-    projectColor: 'green',
-    priority: 'low',
-    estimatedMinutes: 90,
-    timeSpentSeconds: 3,
-    dueDate: new Date(2025, 3, 25),
-    completed: false,
-    columnId: 'queue',
-    createdAt: new Date(),
-  },
-  {
-    id: '4',
-    title: 'Film Facebook Ads Walkthrough',
-    description: 'Funnel + Ads walkthrough',
-    project: 'Side Project',
-    projectColor: 'green',
-    priority: 'low',
-    estimatedMinutes: 90,
-    timeSpentSeconds: 0,
-    dueDate: new Date(2025, 3, 18),
-    completed: false,
-    columnId: 'queue',
-    createdAt: new Date(),
-  },
-  {
-    id: '5',
-    title: 'Questions For Content Strategy',
-    description: 'Revise doc for Connor',
-    project: 'Personal',
-    projectColor: 'purple',
-    priority: 'none',
-    estimatedMinutes: 30,
-    timeSpentSeconds: 0,
-    dueDate: new Date(2025, 3, 15),
-    completed: false,
-    columnId: 'today',
-    createdAt: new Date(),
-  },
-  {
-    id: '6',
-    title: 'Finish Call Setting Flow',
-    description: 'Niche Specific Videos + iMessage Flows',
-    project: 'Work',
-    projectColor: 'blue',
-    priority: 'none',
-    estimatedMinutes: 60,
-    timeSpentSeconds: 0,
-    dueDate: new Date(2025, 3, 18),
-    completed: false,
-    columnId: 'today',
-    createdAt: new Date(),
-  },
-  {
-    id: '7',
-    title: 'Create VSL Deck',
-    description: 'Gamma presentation',
-    project: 'Work',
-    projectColor: 'blue',
-    priority: 'none',
-    estimatedMinutes: 60,
-    timeSpentSeconds: 0,
-    dueDate: new Date(2025, 3, 15),
-    completed: false,
-    columnId: 'today',
-    createdAt: new Date(),
-  },
-  {
-    id: '8',
-    title: 'Create UC Sales Deck',
-    description: 'Gamma presentation for UC',
-    project: 'Work',
-    projectColor: 'blue',
-    priority: 'none',
-    estimatedMinutes: 90,
-    timeSpentSeconds: 0,
-    dueDate: new Date(2025, 3, 18),
-    completed: false,
-    columnId: 'today',
-    createdAt: new Date(),
-  },
-];
+const defaultTasks: Task[] = [];
 
 const columns: { id: ColumnId; title: string }[] = [
   { id: 'queue', title: 'Queue' },
@@ -137,8 +25,8 @@ const columns: { id: ColumnId; title: string }[] = [
 ];
 
 export function TaskBoard() {
-  const [tasks, setTasks] = useState<Task[]>(initialTasks);
-  const [projects, setProjects] = useState<Project[]>(initialProjects);
+  const [tasks, setTasks] = useLocalStorage<Task[]>('taskboard-tasks', defaultTasks);
+  const [projects, setProjects] = useLocalStorage<Project[]>('taskboard-projects', defaultProjects);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedColumn, setSelectedColumn] = useState<ColumnId>('queue');
   const [editingTask, setEditingTask] = useState<Task | null>(null);
