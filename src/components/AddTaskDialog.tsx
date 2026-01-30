@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Task, Priority, ProjectColor, ColumnId } from '@/types/task';
+import { useState, useEffect } from 'react';
+import { Task, Priority, ProjectColor, ColumnId, PROJECT_COLORS } from '@/types/task';
 import {
   Dialog,
   DialogContent,
@@ -19,26 +19,22 @@ import {
 } from '@/components/ui/select';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon } from 'lucide-react';
+import { CalendarIcon, Plus } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { Project, ProjectSelectItem } from './ProjectEditor';
 
-interface AddTaskDialogProps {
+export interface AddTaskDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onAddTask: (task: Omit<Task, 'id' | 'createdAt' | 'timeSpentSeconds' | 'completed'>) => void;
   defaultColumnId: ColumnId;
   editingTask?: Task | null;
   onUpdateTask?: (task: Task) => void;
+  projects: Project[];
+  onUpdateProject: (project: Project) => void;
+  onAddProject: (project: Project) => void;
 }
-
-const projectOptions: { value: string; label: string; color: ProjectColor }[] = [
-  { value: 'Personal', label: 'Personal', color: 'purple' },
-  { value: 'Work', label: 'Work', color: 'blue' },
-  { value: 'Side Project', label: 'Side Project', color: 'green' },
-  { value: 'Learning', label: 'Learning', color: 'orange' },
-  { value: 'Health', label: 'Health', color: 'pink' },
-];
 
 export function AddTaskDialog({ 
   open, 
@@ -46,28 +42,49 @@ export function AddTaskDialog({
   onAddTask, 
   defaultColumnId,
   editingTask,
-  onUpdateTask 
+  onUpdateTask,
+  projects,
+  onUpdateProject,
+  onAddProject,
 }: AddTaskDialogProps) {
   const [title, setTitle] = useState(editingTask?.title || '');
   const [description, setDescription] = useState(editingTask?.description || '');
-  const [project, setProject] = useState(editingTask?.project || 'Personal');
+  const [projectId, setProjectId] = useState(editingTask?.project || projects[0]?.name || 'Personal');
   const [priority, setPriority] = useState<Priority>(editingTask?.priority || 'none');
   const [estimatedMinutes, setEstimatedMinutes] = useState(editingTask?.estimatedMinutes?.toString() || '30');
   const [dueDate, setDueDate] = useState<Date | undefined>(editingTask?.dueDate || undefined);
   const [columnId, setColumnId] = useState<ColumnId>(editingTask?.columnId || defaultColumnId);
+  const [showAddProject, setShowAddProject] = useState(false);
+  const [newProjectName, setNewProjectName] = useState('');
+  const [newProjectColor, setNewProjectColor] = useState<ProjectColor>('blue');
+
+  useEffect(() => {
+    if (editingTask) {
+      setTitle(editingTask.title);
+      setDescription(editingTask.description);
+      setProjectId(editingTask.project);
+      setPriority(editingTask.priority);
+      setEstimatedMinutes(editingTask.estimatedMinutes.toString());
+      setDueDate(editingTask.dueDate || undefined);
+      setColumnId(editingTask.columnId);
+    } else {
+      resetForm();
+    }
+  }, [editingTask, open]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) return;
 
-    const projectColor = projectOptions.find(p => p.value === project)?.color || 'purple';
+    const selectedProject = projects.find(p => p.name === projectId);
+    const projectColor = selectedProject?.color || 'purple';
 
     if (editingTask && onUpdateTask) {
       onUpdateTask({
         ...editingTask,
         title: title.trim(),
         description: description.trim(),
-        project,
+        project: projectId,
         projectColor,
         priority,
         estimatedMinutes: parseInt(estimatedMinutes) || 30,
@@ -78,7 +95,7 @@ export function AddTaskDialog({
       onAddTask({
         title: title.trim(),
         description: description.trim(),
-        project,
+        project: projectId,
         projectColor,
         priority,
         estimatedMinutes: parseInt(estimatedMinutes) || 30,
@@ -94,12 +111,30 @@ export function AddTaskDialog({
   const resetForm = () => {
     setTitle('');
     setDescription('');
-    setProject('Personal');
+    setProjectId(projects[0]?.name || 'Personal');
     setPriority('none');
     setEstimatedMinutes('30');
     setDueDate(undefined);
     setColumnId(defaultColumnId);
+    setShowAddProject(false);
+    setNewProjectName('');
   };
+
+  const handleAddNewProject = () => {
+    if (newProjectName.trim()) {
+      const newProject: Project = {
+        id: Date.now().toString(),
+        name: newProjectName.trim(),
+        color: newProjectColor,
+      };
+      onAddProject(newProject);
+      setProjectId(newProject.name);
+      setShowAddProject(false);
+      setNewProjectName('');
+    }
+  };
+
+  const colorOptions: ProjectColor[] = ['blue', 'green', 'orange', 'purple', 'pink'];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -134,18 +169,94 @@ export function AddTaskDialog({
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Project</Label>
-              <Select value={project} onValueChange={setProject}>
-                <SelectTrigger className="bg-muted/50">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {projectOptions.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    className="w-full justify-start bg-muted/50 font-normal"
+                  >
+                    {projects.find(p => p.name === projectId) ? (
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="w-3 h-3 rounded-full"
+                          style={{ backgroundColor: PROJECT_COLORS[projects.find(p => p.name === projectId)?.color || 'purple'] }}
+                        />
+                        {projectId}
+                      </div>
+                    ) : (
+                      'Select project'
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[200px] p-1" align="start">
+                  <div className="space-y-1">
+                    {projects.map((proj) => (
+                      <ProjectSelectItem
+                        key={proj.id}
+                        project={proj}
+                        selected={proj.name === projectId}
+                        onSelect={() => setProjectId(proj.name)}
+                        onEdit={onUpdateProject}
+                      />
+                    ))}
+                    
+                    {showAddProject ? (
+                      <div className="p-2 space-y-2 border-t mt-1">
+                        <Input
+                          value={newProjectName}
+                          onChange={(e) => setNewProjectName(e.target.value)}
+                          placeholder="Project name"
+                          className="h-8 text-sm"
+                          autoFocus
+                        />
+                        <div className="flex gap-1">
+                          {colorOptions.map((color) => (
+                            <button
+                              key={color}
+                              type="button"
+                              onClick={() => setNewProjectColor(color)}
+                              className={cn(
+                                'w-5 h-5 rounded-full transition-all',
+                                newProjectColor === color && 'ring-2 ring-offset-1 ring-primary'
+                              )}
+                              style={{ backgroundColor: PROJECT_COLORS[color] }}
+                            />
+                          ))}
+                        </div>
+                        <div className="flex gap-1">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 flex-1"
+                            onClick={() => setShowAddProject(false)}
+                          >
+                            Cancel
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            className="h-7 flex-1"
+                            onClick={handleAddNewProject}
+                          >
+                            Add
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setShowAddProject(true)}
+                        className="flex items-center gap-2 w-full px-2 py-1.5 text-sm text-muted-foreground hover:bg-accent rounded-sm"
+                      >
+                        <Plus className="w-3 h-3" />
+                        Add project
+                      </button>
+                    )}
+                  </div>
+                </PopoverContent>
+              </Popover>
             </div>
 
             <div className="space-y-2">
