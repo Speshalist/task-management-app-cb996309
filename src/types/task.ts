@@ -1,6 +1,6 @@
 export type Priority = 'high' | 'medium' | 'low' | 'none';
 export type ProjectColor = 'blue' | 'green' | 'orange' | 'purple' | 'pink';
-export type ColumnId = 'queue' | 'today' | 'waiting';
+export type ColumnId = 'queue' | 'today' | 'waiting' | 'completed';
 
 export interface Task {
   id: string;

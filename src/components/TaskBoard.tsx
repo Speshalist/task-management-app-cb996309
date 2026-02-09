@@ -22,6 +22,7 @@ const columns: { id: ColumnId; title: string }[] = [
   { id: 'queue', title: 'Queue' },
   { id: 'today', title: 'Today' },
   { id: 'waiting', title: 'Waiting' },
+  { id: 'completed', title: 'Completed' },
 ];
 
 export function TaskBoard() {
@@ -135,9 +136,15 @@ export function TaskBoard() {
 
   const handleToggleComplete = (taskId: string) => {
     setTasks((prev) =>
-      prev.map((task) =>
-        task.id === taskId ? { ...task, completed: !task.completed } : task
-      )
+      prev.map((task) => {
+        if (task.id === taskId) {
+          const newCompleted = !task.completed;
+          // Move to completed column when marked complete, back to queue when uncompleted
+          const newColumnId = newCompleted ? 'completed' as ColumnId : 'queue' as ColumnId;
+          return { ...task, completed: newCompleted, columnId: newColumnId };
+        }
+        return task;
+      })
     );
   };
 
