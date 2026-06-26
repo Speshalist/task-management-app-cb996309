@@ -1,15 +1,27 @@
 import { Task, PRIORITY_LABELS } from '@/types/task';
 import { Draggable } from '@hello-pangea/dnd';
-import { Calendar, Clock, Check, Pencil, Play, Pause, RotateCcw } from 'lucide-react';
+import { Calendar, Clock, Check, Pencil, Play, Pause, RotateCcw, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useTaskTimer } from '@/hooks/useTaskTimer';
 import { useCallback } from 'react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 interface TaskCardProps {
   task: Task;
   index: number;
   onToggleComplete: (taskId: string) => void;
+  onDelete: (taskId: string) => void;
   onEdit: (task: Task) => void;
   onTimeUpdate: (taskId: string, seconds: number) => void;
 }
@@ -36,7 +48,7 @@ function formatTime(seconds: number): string {
   return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 }
 
-export function TaskCard({ task, index, onToggleComplete, onEdit, onTimeUpdate }: TaskCardProps) {
+export function TaskCard({ task, index, onToggleComplete, onDelete, onEdit, onTimeUpdate }: TaskCardProps) {
   const stableOnTimeUpdate = useCallback(onTimeUpdate, []);
   
   const { seconds, isRunning, toggle, reset } = useTaskTimer({
@@ -66,12 +78,43 @@ export function TaskCard({ task, index, onToggleComplete, onEdit, onTimeUpdate }
             )}>
               {task.title}
             </h3>
-            <button
-              onClick={() => onEdit(task)}
-              className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-muted rounded"
-            >
-              <Pencil className="w-3.5 h-3.5 text-muted-foreground" />
-            </button>
+            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <button
+                onClick={() => onEdit(task)}
+                className="p-1 hover:bg-muted rounded"
+                title="Edit task"
+              >
+                <Pencil className="w-3.5 h-3.5 text-muted-foreground" />
+              </button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <button
+                    onClick={(e) => e.stopPropagation()}
+                    className="p-1 hover:bg-destructive/10 rounded"
+                    title="Delete task"
+                  >
+                    <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                  </button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete this task?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will permanently remove &quot;{task.title}&quot; from your board.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      onClick={() => onDelete(task.id)}
+                    >
+                      Delete
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
           </div>
           
           {task.description && (

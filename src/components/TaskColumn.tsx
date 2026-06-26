@@ -10,6 +10,7 @@ interface TaskColumnProps {
   tasks: Task[];
   onAddTask: (columnId: ColumnId) => void;
   onToggleComplete: (taskId: string) => void;
+  onDeleteTask: (taskId: string) => void;
   onEditTask: (task: Task) => void;
   onTimeUpdate: (taskId: string, seconds: number) => void;
 }
@@ -18,6 +19,7 @@ const columnBgClasses: Record<ColumnId, string> = {
   queue: 'bg-column-queue',
   today: 'bg-column-today',
   waiting: 'bg-column-waiting',
+  completed: 'bg-column-completed',
 };
 
 function formatTotalTime(tasks: Task[]): string {
@@ -30,7 +32,7 @@ function formatTotalTime(tasks: Task[]): string {
   return `${minutes}m`;
 }
 
-export function TaskColumn({ id, title, tasks, onAddTask, onToggleComplete, onEditTask, onTimeUpdate }: TaskColumnProps) {
+export function TaskColumn({ id, title, tasks, onAddTask, onToggleComplete, onDeleteTask, onEditTask, onTimeUpdate }: TaskColumnProps) {
   return (
     <div className={cn(
       'flex flex-col rounded-xl p-4 min-w-[320px] max-w-[360px]',
@@ -72,6 +74,7 @@ export function TaskColumn({ id, title, tasks, onAddTask, onToggleComplete, onEd
                 task={task}
                 index={index}
                 onToggleComplete={onToggleComplete}
+                onDelete={onDeleteTask}
                 onEdit={onEditTask}
                 onTimeUpdate={onTimeUpdate}
               />
